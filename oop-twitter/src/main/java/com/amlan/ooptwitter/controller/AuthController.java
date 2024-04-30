@@ -1,4 +1,5 @@
 package com.amlan.ooptwitter.controller;
+import com.amlan.ooptwitter.ErrorJSONFormatter;
 import com.amlan.ooptwitter.model.User;
 import com.amlan.ooptwitter.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,27 +17,28 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody User user) {
+    public ResponseEntity<Object> login(@RequestBody User user) {
         //check if user exists
         User user1 = userService.getUserByEmail(user.getEmail());
         if (user1 == null) {
-            return ResponseEntity.badRequest().body("User does not exist");
+            return ErrorJSONFormatter.errorJSONResponse("User does not exist");
         } else {
             //check if password is correct
             if (user1.getPassword().equals(user.getPassword())) {
                 return ResponseEntity.ok("Login successful");
             } else {
-                return ResponseEntity.badRequest().body("Incorrect password");
-            }
+                return ErrorJSONFormatter.errorJSONResponse("Incorrect password");
+                }
         }
     }
 
     //signup functionality
+
     @PostMapping("/signup")
-    public ResponseEntity<String> signIn(@RequestBody User user) {
+    public ResponseEntity<Object> signIn(@RequestBody User user) {
         //check if user already exists
         if (userService.getUserByEmail(user.getEmail()) != null) {
-            return ResponseEntity.badRequest().body("User already exists");
+            return ErrorJSONFormatter.errorJSONResponse("User already exists");
         } else {
             //create new user
             userService.addUser(user.getEmail(), user.getPassword(), user.getName());

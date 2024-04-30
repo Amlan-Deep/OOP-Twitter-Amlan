@@ -1,5 +1,6 @@
 package com.amlan.ooptwitter.controller;
 
+import com.amlan.ooptwitter.ErrorJSONFormatter;
 import com.amlan.ooptwitter.model.User;
 import com.amlan.ooptwitter.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,7 +28,7 @@ public class UserController {
     public ResponseEntity<Object> getUser(@RequestParam int userID){
         User user = userService.getUserByuserID(userID);
         if(user == null){
-            return ResponseEntity.badRequest().body("User does not exist");
+            return ErrorJSONFormatter.errorJSONResponse("User does not exist");
         }
         else{
             ObjectNode userNode = objectMapper.createObjectNode();

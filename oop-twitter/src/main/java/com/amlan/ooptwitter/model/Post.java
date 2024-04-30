@@ -10,7 +10,7 @@ public class Post {
     @Column(name = "post_id")
     private int postID;
 
-    @Column(name = "postContent")
+    @Column(name = "postBody")
     private String postContent;
 
     @Column(name = "postDate")
@@ -20,7 +20,7 @@ public class Post {
     private String postTime;
 
     @ManyToOne
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "userID")
     private User postCreator;
 
     //setters

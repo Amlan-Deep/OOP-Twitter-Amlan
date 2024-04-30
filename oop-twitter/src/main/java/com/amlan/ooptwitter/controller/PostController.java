@@ -1,5 +1,6 @@
 package com.amlan.ooptwitter.controller;
 
+import com.amlan.ooptwitter.ErrorJSONFormatter;
 import com.amlan.ooptwitter.model.Comment;
 import com.amlan.ooptwitter.model.Post;
 import com.amlan.ooptwitter.model.User;
@@ -37,10 +38,10 @@ public class PostController {
 
 
     static class postContentConfig{
-        @JsonProperty("postCreator")
+        @JsonProperty("userID")
         private int postCreator;
 
-        @JsonProperty("post")
+        @JsonProperty("postBody")
         private String post;
 
         public int getPostCreator() {
@@ -52,11 +53,11 @@ public class PostController {
         }
     }
     @PostMapping("/post")
-    public ResponseEntity<String> addPost(@RequestBody postContentConfig post){
+    public ResponseEntity<Object> addPost(@RequestBody postContentConfig post){
         //check if user exists
         User user1 = userService.getUserByuserID(post.getPostCreator());
         if(user1 == null){
-            return ResponseEntity.badRequest().body("User does not exist");
+            return ErrorJSONFormatter.errorJSONResponse("User does not exist");
         }
         else{
             //create new post
@@ -66,17 +67,46 @@ public class PostController {
 
     }
     @PatchMapping("/post")
-    public ResponseEntity<String> editPostContent(@RequestBody Map<String, Object> payload){
+    public ResponseEntity<Object> editPostContent(@RequestBody Map<String, Object> payload){
         int postID = Integer.parseInt(payload.get("postID").toString());
-        String postContent = payload.get("postContent").toString();
-        String result = postService.editPostContent(postID, postContent);
-        return ResponseEntity.ok(result);
+        String postContent = payload.get("postBody").toString();
+        ResponseEntity<Object> response = postService.editPostContent(postID, postContent);
+        return response;
     }
+
     @DeleteMapping("/post")
-    public ResponseEntity<String> deletePost(@RequestBody Map<String, Object> payload){
-        int postID = Integer.parseInt(payload.get("postID").toString());
-        String result = postService.deletePost(postID);
-        return ResponseEntity.ok(result);
+    public ResponseEntity<Object> deletePost(@RequestParam int postID){
+        ResponseEntity<Object> response = postService.deletePost(postID);
+        return response;
+    }
+
+
+    @GetMapping("/post")
+    public ResponseEntity<Object> getPost(@RequestParam int postID){
+        Post post = postService.getPostBypostID(postID);
+        if(post == null){
+            return ErrorJSONFormatter.errorJSONResponse("Post does not exist");
+        }
+        else{
+            List<Comment> comments = postService.getAllCommentsByPost(post);
+            ObjectNode postNode = objectMapper.createObjectNode();
+            postNode.put("postID", post.getpostID());
+            postNode.put("postBody", post.getpostContent());
+            postNode.put("date", post.getPostDate());
+            List<ObjectNode> commentNodes = new ArrayList<>();
+            for(Comment comment: comments){
+                ObjectNode commentNode = objectMapper.createObjectNode();
+                commentNode.put("commentID", comment.getcommentID());
+                commentNode.put("commentBody", comment.getCommentBody());
+                ObjectNode commentCreator = objectMapper.createObjectNode();
+                commentCreator.put("userID", comment.getCommentCreator().getuserID());
+                commentCreator.put("name", comment.getCommentCreator().getName());
+                commentNode.putPOJO("commentCreator", commentCreator);
+                commentNodes.add(commentNode);
+            }
+            postNode.putPOJO("comments", commentNodes);
+            return ResponseEntity.ok(postNode);
+        }
     }
 
     @GetMapping("/")
@@ -88,7 +118,6 @@ public class PostController {
         for(Post post: posts){
             List<Comment> comments = postService.getAllCommentsByPost(post);
             ObjectNode postNode = objectMapper.createObjectNode();
-            postNode.put(String.valueOf(post.getpostID()), post.getpostContent());
             postNode.put("date", post.getPostDate());
             postNode.put("postID", post.getpostID());
             postNode.put("postContent", post.getpostContent());
